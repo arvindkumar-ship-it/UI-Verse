@@ -1,3 +1,4 @@
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { Navbar } from './components/Navbar'
 import { Hero } from './components/Hero'
 import { ScrollingTicker } from './components/ScrollingTicker'
@@ -7,14 +8,15 @@ import { EventsSection } from './components/EventsSection'
 import { TeamSection } from './components/TeamSection'
 import { Footer } from './components/Footer'
 import { BackgroundMusic } from './components/BackgroundMusic'
+import { LoginPage } from './pages/LoginPage'
+import { RegistrationPage } from './pages/RegistrationPage'
+import { SubmissionPage } from './pages/SubmissionPage'
+import { ThankYouPage } from './pages/ThankYouPage'
 import './App.css'
 
-function App() {
+function LandingPage() {
   return (
-    <div className="app">
-      <BackgroundMusic />
-
-      <Navbar />
+    <>
       <Hero />
       <ScrollingTicker />
       <WelcomeSection />
@@ -24,6 +26,22 @@ function App() {
         <TeamSection />
         <Footer />
       </div>
+    </>
+  )
+}
+
+function App() {
+  return (
+    <div className="app">
+      <BackgroundMusic />
+      {useLocation().pathname === '/' && <Navbar />}
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegistrationPage />} />
+        <Route path="/submission" element={<SubmissionPage />} />
+        <Route path="/thank-you" element={<ThankYouPage />} />
+      </Routes>
     </div>
   )
 }
