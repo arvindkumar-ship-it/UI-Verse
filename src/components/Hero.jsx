@@ -18,6 +18,8 @@
 
 
 
+import { Link } from 'react-router-dom';
+
 export function Hero() {
   return (
     <section className="hero-section">
@@ -36,7 +38,7 @@ export function Hero() {
         <p className="hero-ui-text">UI</p>
         <p className="hero-title">Verse</p>
         <p className="hero-date">September 10, 2026</p>
-        <button className="hero-button">Register here</button>
+        <Link to="/login" className="hero-button">Register here</Link>
         <p className="hero-tagline">Think. Design. Connect. Create</p>
       </div>
     </section>
