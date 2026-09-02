@@ -15,8 +15,7 @@
 //   );
 // }
 
-
-
+import { Link } from 'react-router-dom';
 
 export function Navbar() {
   return (
@@ -25,11 +24,11 @@ export function Navbar() {
       <div className="navbar-nav-pill">
         <div className="nav-items">
           <a href="#home" className="nav-link">HOME</a>
-          <a href="#events" className="nav-link">EVENTS</a>
+          <Link to="/submission" className="nav-link">EVENTS</Link>
           <a href="#team" className="nav-link">MEET THE TEAM</a>
           <a href="#schedule" className="nav-link">SCHEDULE</a>
         </div>
-        <button className="btn-signin">SIGN IN</button>
+        <Link to="/login" className="btn-signin">SIGN IN</Link>
       </div>
     </nav>
   );
