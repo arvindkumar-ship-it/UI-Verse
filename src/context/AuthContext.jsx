@@ -66,8 +66,18 @@ export function AuthProvider({ children }) {
     setUser(null);
   }
 
+  async function forgotPassword({ email }) {
+    return api.post('/auth/forgot-password', { email });
+  }
+
+  async function resetPassword({ token, newPassword }) {
+    return api.post('/auth/reset-password', { token, newPassword });
+  }
+
   return (
-    <AuthContext.Provider value={{ user, eventId, loading, register, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, eventId, loading, register, login, logout, forgotPassword, resetPassword }}
+    >
       {children}
     </AuthContext.Provider>
   );
