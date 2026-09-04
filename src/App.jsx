@@ -14,6 +14,7 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { SubmissionPage } from './pages/SubmissionPage'
 import { ThankYouPage } from './pages/ThankYouPage'
+import { AdminCatalogPage } from './pages/AdminCatalogPage'
 import './App.css'
 
 function LandingPage() {
@@ -46,6 +47,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/submission" element={<SubmissionPage />} />
         <Route path="/thank-you" element={<ThankYouPage />} />
+        <Route path="/admin/catalogue" element={<AdminCatalogPage />} />
       </Routes>
     </div>
   )
