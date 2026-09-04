@@ -46,6 +46,7 @@ export function Navbar() {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -68,6 +69,9 @@ export function Navbar() {
           <Link to="/submission" className="nav-link">EVENTS</Link>
           <a href="#team" className="nav-link">MEET THE TEAM</a>
           <a href="#schedule" className="nav-link">SCHEDULE</a>
+          {isAdmin && (
+  <Link to="/admin/catalogue" className="nav-link">PARTICIPANTS SUBMISSION</Link>
+)}
         </div>
         {user ? (
           <div className="navbar-profile-wrap" ref={menuRef}>
