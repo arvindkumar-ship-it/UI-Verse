@@ -148,6 +148,9 @@ export function LoginPage() {
       <p style={{ left: '63.37cqw', top: '47.85vh', position: 'absolute', color: 'black', fontSize: '1.95vh', fontFamily: 'Klee One', fontWeight: '400' }}>
         New user? <Link to="/register" style={{ color: '#714012', fontWeight: 600 }}>Register</Link>
       </p>
+      <p style={{ left: '63.37cqw', top: '51.50vh', position: 'absolute', color: 'black', fontSize: '1.95vh', fontFamily: 'Klee One', fontWeight: '400' }}>
+        <Link to="/forgot-password" style={{ color: '#714012', fontWeight: 600 }}>Forgot password?</Link>
+      </p>
     </div>
   );
 }
