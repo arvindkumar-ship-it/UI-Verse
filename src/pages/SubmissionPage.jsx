@@ -1,11 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, uploadToPresignedUrl } from '../lib/api';
-
-function initialAssetState() {
-  return { assetId: null, fileName: '', status: 'idle', error: '' };
-}
 
 function withTimeout(promise, ms, label) {
   let timer;
@@ -16,54 +12,41 @@ function withTimeout(promise, ms, label) {
 }
 
 export function SubmissionPage() {
-  const [showActions, setShowActions] = useState(false);
-  const [submissionId, setSubmissionId] = useState(null);
+  const [searchParams] = useSearchParams();
+  const [showActions, setShowActions] = useState(searchParams.get('panel') === '1');
+  const [submission, setSubmission] = useState(null);
+  const submissionId = submission?.id ?? null;
   const [ensuring, setEnsuring] = useState(false);
   const [ensureError, setEnsureError] = useState('');
-  const [landing, setLanding] = useState(initialAssetState());
-  const [login, setLogin] = useState(initialAssetState());
+  const [addingPage, setAddingPage] = useState(false);
+  const [addPageError, setAddPageError] = useState('');
+  const [addedToast, setAddedToast] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const [debugLog, setDebugLog] = useState([]);
+  const bootstrapped = useRef(false);
   const navigate = useNavigate();
-  const { eventId, user, loading } = useAuth();
-
-  function pushDebug(msg) {
-    const line = `${new Date().toLocaleTimeString()} ${msg}`;
-    console.log('[SUBMISSION-DEBUG]', line);
-    setDebugLog((d) => [...d.slice(-5), line]);
-  }
+  const { eventId } = useAuth();
 
   useEffect(() => {
-    // NOTE: no `cancelled` flag + cleanup here on purpose. Same bug class as
-    // AuthContext.jsx had: StrictMode's dev-only synthetic unmount runs this
-    // effect's cleanup almost immediately, flipping `cancelled` to true
-    // before the awaited calls below resolve — so `setSubmissionId` was
-    // silently skipped every time even though the GET call succeeded (the
-    // debug logs proved this: "GET resolved: found id=..." printed, but
-    // submissionId stayed null because the state update was gated behind
-    // `if (!cancelled)`). Removing the gate fixes it; the [eventId,
-    // submissionId, ensuring] dependency guard below is enough to prevent
-    // re-running once submissionId or ensuring is set.
-    if (!eventId || submissionId || ensuring) return;
+    // Guard against StrictMode's dev-only double effect invocation — see
+    // AuthContext.jsx for why we intentionally don't use a `cancelled` flag
+    // + cleanup here (it silently swallowed the state updates before).
+    if (!eventId || bootstrapped.current) return;
+    bootstrapped.current = true;
 
     async function ensureSubmission() {
       setEnsuring(true);
       setEnsureError('');
-      pushDebug(`start, eventId=${eventId}`);
       try {
-        pushDebug('calling GET submissions/me...');
         const existing = await withTimeout(
           api.get(`/events/${eventId}/submissions/me`),
           8000,
           'GET submissions/me',
         );
-        pushDebug(`GET resolved: ${existing ? 'found id=' + existing.id : 'null (none yet)'}`);
         if (existing) {
-          setSubmissionId(existing.id);
+          setSubmission(existing);
           return;
         }
-        pushDebug('calling POST submissions (create)...');
         const created = await withTimeout(
           api.post(`/events/${eventId}/submissions`, {
             title: 'UI Verse Submission',
@@ -72,31 +55,41 @@ export function SubmissionPage() {
           8000,
           'POST submissions',
         );
-        pushDebug(`POST resolved: id=${created?.id}`);
-        setSubmissionId(created.id);
+        setSubmission(created);
       } catch (err) {
-        pushDebug(`CAUGHT ERROR: ${err?.message || err}`);
         setEnsureError(
           err?.data?.message || err?.message || 'Could not prepare your submission.',
         );
       } finally {
-        pushDebug('finally reached, ensuring set false');
         setEnsuring(false);
       }
     }
 
     ensureSubmission();
-  }, [eventId, submissionId, ensuring]);
+  }, [eventId]);
 
-  async function handleFileUpload(kind, file) {
-    const setter = kind === 'landing' ? setLanding : setLogin;
+  // Auto-dismiss the "Design added" toast after a few seconds.
+  useEffect(() => {
+    if (!addedToast) return;
+    const t = setTimeout(() => setAddedToast(false), 2500);
+    return () => clearTimeout(t);
+  }, [addedToast]);
 
-    if (!submissionId) {
-      setter((s) => ({ ...s, error: 'Submission not ready yet — wait a moment and try again.' }));
-      return;
+  async function refreshSubmission() {
+    if (!submissionId) return;
+    try {
+      const fresh = await api.get(`/submissions/${submissionId}`);
+      setSubmission(fresh);
+    } catch {
+      // Keep showing the last known state if the refresh itself fails.
     }
+  }
 
-    setter({ assetId: null, fileName: file.name, status: 'uploading', error: '' });
+  async function handleAddPage(file) {
+    if (!submissionId || addingPage) return;
+
+    setAddingPage(true);
+    setAddPageError('');
 
     try {
       const intent = await api.post(`/submissions/${submissionId}/upload-intent`, {
@@ -110,22 +103,22 @@ export function SubmissionPage() {
 
       await api.post(`/submissions/${submissionId}/assets/${intent.assetId}/complete`);
 
-      setter({ assetId: intent.assetId, fileName: file.name, status: 'done', error: '' });
+      await refreshSubmission();
+      setAddedToast(true);
     } catch (err) {
-      setter({
-        assetId: null,
-        fileName: file.name,
-        status: 'error',
-        error: err?.data?.message || err?.message || 'Upload failed.',
-      });
+      setAddPageError(err?.data?.message || err?.message || 'Upload failed.');
+    } finally {
+      setAddingPage(false);
     }
   }
 
-  const bothUploaded = landing.status === 'done' && login.status === 'done';
-  const inlineError = ensureError || landing.error || login.error || submitError;
+  const activeAssets = (submission?.assets ?? []).filter((a) => a.status !== 'DELETED');
+  const isLocked = submission?.status === 'LOCKED';
+  const canSubmit = activeAssets.length > 0 && !isLocked && !submitting;
+  const inlineError = ensureError || addPageError || submitError;
 
   const handleSubmit = async () => {
-    if (!submissionId || !bothUploaded || submitting) return;
+    if (!submissionId || !canSubmit) return;
 
     setSubmitting(true);
     setSubmitError('');
@@ -140,35 +133,6 @@ export function SubmissionPage() {
 
   return (
     <div className="submission-figma-page">
-      {/* --- TEMPORARY DEBUG BANNER — remove once bug is confirmed fixed --- */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 9999,
-          background: '#000',
-          color: '#0f0',
-          fontFamily: 'monospace',
-          fontSize: '12px',
-          padding: '6px 10px',
-          lineHeight: 1.5,
-          maxHeight: '40vh',
-          overflowY: 'auto',
-        }}
-      >
-        <div>
-          DEBUG: authLoading={String(loading)} | user={user ? user.email : 'null'} | eventId=
-          {String(eventId)} | submissionId={String(submissionId)} | ensuring={String(ensuring)} |
-          ensureError={ensureError || '(none)'}
-        </div>
-        {debugLog.map((line, i) => (
-          <div key={i} style={{ color: '#0ff' }}>{line}</div>
-        ))}
-      </div>
-      {/* --- END DEBUG BANNER --- */}
-
       <img className="submission-bg" src="/images/green-forest.png" alt="" />
 
       <div className="submission-nav-pill">
@@ -189,48 +153,55 @@ export function SubmissionPage() {
       {showActions && (
         <div className="submission-panel">
           <div className="submission-actions">
-            <div className="submission-action-row">
-              <label className="submission-file-btn">
-                {landing.status === 'done'
-                  ? 'Landing Page ✓'
-                  : landing.status === 'uploading'
-                  ? 'Uploading…'
-                  : 'Landing Page'}
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  hidden
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleFileUpload('landing', file);
-                  }}
-                />
-              </label>
-              <label className="submission-file-btn">
-                {login.status === 'done'
-                  ? 'Login Page ✓'
-                  : login.status === 'uploading'
-                  ? 'Uploading…'
-                  : 'Login Page'}
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  hidden
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleFileUpload('login', file);
-                  }}
-                />
-              </label>
-            </div>
+            {ensuring ? (
+              <p style={{ fontFamily: 'Klee One', color: 'white', margin: 0 }}>Loading your submission…</p>
+            ) : (
+              <>
+                {submission?.status && (
+                  <p style={{ fontFamily: 'Klee One', color: 'white', margin: 0, fontSize: 13 }}>
+                    Status: {submission.status}
+                    {isLocked && ' — judging has started, this submission can no longer be changed.'}
+                  </p>
+                )}
 
-            <button
-              className="submission-final-btn"
-              onClick={handleSubmit}
-              disabled={!bothUploaded || submitting}
-            >
-              {submitting ? 'Submitting…' : 'SUBMIT'}
-            </button>
+                <div className="submission-action-row">
+                  {!isLocked && (
+                    <label className="submission-file-btn">
+                      {addingPage ? 'Uploading…' : '+ Add Design Page'}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        hidden
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleAddPage(file);
+                        }}
+                      />
+                    </label>
+                  )}
+
+                  <button
+                    type="button"
+                    className="submission-file-btn"
+                    onClick={() => navigate('/submission/catalog')}
+                  >
+                    Submitted Designs
+                  </button>
+
+                  <button
+                    className="submission-final-btn"
+                    onClick={handleSubmit}
+                    disabled={!canSubmit}
+                  >
+                    {submitting
+                      ? 'Submitting…'
+                      : submission?.status === 'SUBMITTED'
+                      ? 'Update Submission'
+                      : 'SUBMIT'}
+                  </button>
+                </div>
+              </>
+            )}
 
             {inlineError && <p className="submission-error-text">{inlineError}</p>}
           </div>
@@ -238,6 +209,27 @@ export function SubmissionPage() {
       )}
 
       <div className="submission-powered">powered by Figma</div>
+
+      {addedToast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(41, 28, 14, 0.92)',
+            color: 'white',
+            fontFamily: 'Klee One',
+            fontSize: 14,
+            padding: '10px 20px',
+            borderRadius: 999,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+            zIndex: 1000,
+          }}
+        >
+          ✓ Design added!
+        </div>
+      )}
     </div>
   );
 }
