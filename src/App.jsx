@@ -15,6 +15,7 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { SubmissionPage } from './pages/SubmissionPage'
 import { ThankYouPage } from './pages/ThankYouPage'
 import { AdminCatalogPage } from './pages/AdminCatalogPage'
+import { SubmissionCatalogPage } from './pages/SubmissionCatalogPage';
 import './App.css'
 
 function LandingPage() {
@@ -48,6 +49,7 @@ function App() {
         <Route path="/submission" element={<SubmissionPage />} />
         <Route path="/thank-you" element={<ThankYouPage />} />
         <Route path="/admin/catalogue" element={<AdminCatalogPage />} />
+        <Route path="/submission/catalog" element={<SubmissionCatalogPage />} />
       </Routes>
     </div>
   )
