@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 export function TeamSection() {
   return (
     <div className="team-scene">
@@ -40,8 +41,8 @@ export function TeamSection() {
       </div>
 
       <div className="team-cta">
-        <button className="btn-tan">Explore Event</button>
-        <button className="btn-tan">Register Now!</button>
+        <Link to="/submission" className="btn-tan">Explore Event</Link>
+        <Link to="/register" className="btn-tan">Register Now!</Link>
       </div>
     </div>
   );

@@ -31,13 +31,13 @@ export function Hero() {
           muted 
           playsInline
         >
-          <source src="/videos/hero-bg.mp4" type="video/mp4" />
+          <source src="/videos/hero-bg1.mp4" type="video/mp4" />
         </video>
       </div>
       <div className="hero-content">
         <p className="hero-ui-text">UI</p>
         <p className="hero-title">Verse</p>
-        <p className="hero-date">September 10, 2026</p>
+        <p className="hero-date">September 09, 2026</p>
         <Link to="/login" className="hero-button">Register here</Link>
         <p className="hero-tagline">Think. Design. Connect. Create</p>
       </div>

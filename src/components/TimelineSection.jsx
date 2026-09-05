@@ -2,8 +2,8 @@ export function TimelineSection() {
   const events = [
     { title: 'Registration Starts', date: '5 September 2026', icon: '/images/timeline-registration.png', side: 'right' },
     { title: 'Workshop', date: '8 September 2026', icon: '/images/timeline-workshop.png', side: 'left' },
-    { title: 'Event start', date: '10 September 2026 (1:30 PM)', icon: '/images/timeline-event.png', side: 'right' },
-    { title: 'Prize Distribution', date: '10 September 2026 (1:00 PM)', icon: '/images/timeline-prize.png', side: 'left' }
+    { title: 'Event start', date: '09 September 2026 (1:30 PM)', icon: '/images/timeline-event.png', side: 'right' },
+    { title: 'Prize Distribution', date: '10 September 2026 (4:20 PM)', icon: '/images/timeline-prize.png', side: 'left' }
   ];
 
   return (

@@ -24,9 +24,11 @@ function LandingPage() {
       <Hero />
       <ScrollingTicker />
       <WelcomeSection />
-      <TimelineSection />
+      <div id="schedule">
+        <TimelineSection />
+      </div>
       <EventsSection />
-      <div className="team-footer-bg">
+      <div id="team" className="team-footer-bg">
         <TeamSection />
         <Footer />
       </div>

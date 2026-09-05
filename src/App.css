@@ -721,7 +721,7 @@
   transition: flex 0.4s ease;
   display: flex;
   align-items: flex-end;
-  background: rgba(255, 255, 255, 0.22);
+  background: linear-gradient(135deg, #e8d9cc 0%, #d4c5b9 100%);
   border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
