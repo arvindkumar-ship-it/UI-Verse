@@ -165,7 +165,17 @@ export function AdminCatalogPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5e6d3', padding: '32px 24px' }}>
+    <div
+  style={{
+    minHeight: '100vh',
+    padding: '32px 24px',
+    backgroundColor: '#f5e6d3',
+    backgroundImage: 'url(/images/venue-bg3.jpg)',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundAttachment: 'fixed',
+  }}
+>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <h1 style={{ fontFamily: 'Kalnia', fontSize: 28, color: '#291c0e', marginBottom: 20 }}>
           Submissions Catalogue
