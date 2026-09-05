@@ -80,7 +80,7 @@
 
 export function EventsSection() {
   return (
-    <section className="events-section">
+    <section id="events" className="events-section">
       <div className="events-container">
         <div className="venue-info">
           <div className="venue-pill">Venue- LAB 4, D-BLOCK</div>
