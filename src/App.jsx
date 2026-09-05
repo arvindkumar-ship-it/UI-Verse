@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { Navbar } from './components/Navbar'
 import { Hero } from './components/Hero'
@@ -36,11 +37,30 @@ function LandingPage() {
   )
 }
 
+const PAGE_TITLES = {
+  '/': 'Home',
+  '/login': 'Sign In',
+  '/register': 'Register',
+  '/forgot-password': 'Forgot Password',
+  '/reset-password': 'Reset Password',
+  '/submission': 'Event',
+  '/thank-you': 'Thank You',
+  '/admin/catalogue': 'Admin Catalogue',
+  '/submission/catalog': 'My Submission',
+}
+
 function App() {
+  const location = useLocation()
+
+  useEffect(() => {
+    const pageName = PAGE_TITLES[location.pathname] ?? 'LOGIX'
+    document.title = pageName === 'LOGIX' ? 'LOGIX' : `${pageName} | LOGIX`
+  }, [location.pathname])
+
   return (
     <div className="app">
       <BackgroundMusic />
-      {useLocation().pathname === '/' && <Navbar />}
+      {location.pathname === '/' && <Navbar />}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
