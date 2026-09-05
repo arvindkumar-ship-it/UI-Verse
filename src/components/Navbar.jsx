@@ -66,13 +66,13 @@ export function Navbar() {
       <div className="navbar-nav-pill">
         <div className="nav-items">
           <a href="#home" className="nav-link">HOME</a>
-          <a href="#events" className="nav-link">EVENTS</a>
+          <Link to="/submission" className="nav-link">EVENTS</Link>
           <Link to="/submission" className="nav-link">MY SUBMISSION</Link>
           <a href="#team" className="nav-link">MEET THE TEAM</a>
           <a href="#schedule" className="nav-link">SCHEDULE</a>
           {isAdmin && (
-  <Link to="/admin/catalogue" className="nav-link">PARTICIPANTS SUBMISSION</Link>
-)}
+          <Link to="/admin/catalogue" className="nav-link">PARTICIPANTS SUBMISSION</Link>
+          )}
         </div>
         {user ? (
           <div className="navbar-profile-wrap" ref={menuRef}>
