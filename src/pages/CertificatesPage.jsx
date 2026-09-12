@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, downloadFile } from '../lib/api';
 
@@ -7,6 +7,8 @@ export function CertificatesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [downloadingId, setDownloadingId] = useState(null);
+  const [previews, setPreviews] = useState({}); // id -> { url, loading, error }
+  const previewUrls = useRef([]); // track for cleanup
 
   useEffect(() => {
     api
@@ -15,6 +17,32 @@ export function CertificatesPage() {
       .catch((err) => setError(err?.data?.message || err?.message || 'Could not load certificates.'))
       .finally(() => setLoading(false));
   }, []);
+
+  // Fetch each certificate's preview PDF once the list is loaded
+  useEffect(() => {
+    certificates.forEach((cert) => {
+      setPreviews((prev) => ({ ...prev, [cert.id]: { url: null, loading: true, error: null } }));
+
+      downloadFile(`/certificates/${cert.id}/preview`)
+        .then(({ blob }) => {
+          const url = URL.createObjectURL(blob);
+          previewUrls.current.push(url);
+          setPreviews((prev) => ({ ...prev, [cert.id]: { url, loading: false, error: null } }));
+        })
+        .catch((err) => {
+          setPreviews((prev) => ({
+            ...prev,
+            [cert.id]: { url: null, loading: false, error: err?.message || 'Preview failed' },
+          }));
+        });
+    });
+
+    return () => {
+      previewUrls.current.forEach((url) => URL.revokeObjectURL(url));
+      previewUrls.current = [];
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [certificates]);
 
   async function handleDownload(cert) {
     setDownloadingId(cert.id);
@@ -64,37 +92,80 @@ export function CertificatesPage() {
               No certificates yet — they appear here once your submission is accepted.
             </p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
-              {certificates.map((cert) => (
-                <div
-                  key={cert.id}
-                  style={{
-                    background: 'rgba(245, 230, 211, 0.9)',
-                    border: '1px solid #b28561',
-                    borderRadius: 12,
-                    padding: 20,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 12,
-                  }}
-                >
-                  <div style={{ fontFamily: 'Kalnia', fontSize: 16, color: '#291c0e' }}>
-                    Certificate of Participation
-                  </div>
-                  <div style={{ fontFamily: 'Klee One', fontSize: 13, color: '#714012' }}>
-                    {cert.eventName}
-                  </div>
-                  <button
-                    type="button"
-                    disabled={downloadingId === cert.id}
-                    onClick={() => handleDownload(cert)}
-                    className="btn-signin"
-                    style={{ marginTop: 8 }}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+              {certificates.map((cert) => {
+                const preview = previews[cert.id];
+                return (
+                  <div
+                    key={cert.id}
+                    style={{
+                      background: 'rgba(245, 230, 211, 0.9)',
+                      border: '1px solid #b28561',
+                      borderRadius: 12,
+                      padding: 16,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12,
+                    }}
                   >
-                    {downloadingId === cert.id ? 'Downloading…' : 'Download PDF'}
-                  </button>
-                </div>
-              ))}
+                    <div style={{ fontFamily: 'Kalnia', fontSize: 16, color: '#291c0e' }}>
+                      Certificate of Participation
+                    </div>
+                    <div style={{ fontFamily: 'Klee One', fontSize: 13, color: '#714012' }}>
+                      {cert.eventName}
+                    </div>
+
+                    {/* Preview */}
+                    <div
+                      style={{
+                        width: '100%',
+                        aspectRatio: '983 / 696',
+                        borderRadius: 8,
+                        overflow: 'hidden',
+                        border: '1px solid #cbb89a',
+                        background: '#f5e6d3',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {preview?.loading && (
+                        <span style={{ fontFamily: 'Klee One', fontSize: 12, color: '#a08a6f' }}>
+                          Loading preview…
+                        </span>
+                      )}
+                      {preview?.error && (
+                        <span style={{ fontFamily: 'Klee One', fontSize: 12, color: '#a03a3a' }}>
+                          Preview unavailable
+                        </span>
+                      )}
+                      {preview?.url && (
+                        <iframe
+                          src={`${preview.url}#toolbar=0&navpanes=0&scrollbar=0`}
+                          title={`${cert.eventName} certificate preview`}
+                          style={{ width: '100%', height: '100%', border: 'none' }}
+                        />
+                      )}
+                    </div>
+
+                    <button
+  type="button"
+  disabled={downloadingId === cert.id}
+  onClick={() => handleDownload(cert)}
+  className="btn-signin"
+  style={{
+    marginTop: 4,
+    padding: '8px 20px',
+    fontSize: 14,
+    width: 'auto',
+    alignSelf: 'center',
+  }}
+>
+  {downloadingId === cert.id ? 'Downloading…' : 'Download PDF'}
+</button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
