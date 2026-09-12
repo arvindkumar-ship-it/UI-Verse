@@ -178,7 +178,7 @@ export const api = {
   delete: (path) => request(path, { method: 'DELETE' }),
 };
 
-export async function downloadFile(path) {
+export async function downloadFile(path, isRetry = false) {
   const headers = { 'X-Requested-With': 'XMLHttpRequest' };
   if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
 
@@ -187,6 +187,11 @@ export async function downloadFile(path) {
     credentials: 'include',
     headers,
   });
+
+  if (response.status === 401 && !isRetry) {
+    const newToken = await refreshAccessToken();
+    if (newToken) return downloadFile(path, true);
+  }
 
   if (!response.ok) throw new Error(`Download failed: ${response.status}`);
 
